@@ -1,0 +1,49 @@
+version: "3.4"
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: 20m
+      max-file: "3"
+
+services:
+  klaytn:
+    restart: "unless-stopped"
+    image: klaytn/klaytn:${KLAYTN_TAG:-latest}
+    volumes:
+      - klaytn-data:/var/lib/klaytn
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - 32323:32323/tcp
+      - 32323:32323/udp
+    entrypoint:
+      - bash
+      - -c
+    command:
+      - |
+        sed -i 's~DATA_DIR=~DATA_DIR=/var/lib/klaytn~g' /klaytn-docker-pkg/conf/kend.conf
+        kend start-docker
+    <<: *logging
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.klaytn.entrypoints=websecure
+      - traefik.http.routers.klaytn.rule=Host(`${KLAYTN_HOST}.${DOMAIN}`)
+      - traefik.http.routers.klaytn.service=klaytn
+      - traefik.http.routers.klaytn.tls.certresolver=letsencrypt
+      - traefik.http.routers.klaytnlb.entrypoints=websecure
+      - traefik.http.routers.klaytnlb.rule=Host(`${KLAYTN_LB}.${DOMAIN}`)
+      - traefik.http.routers.klaytnlb.service=klaytn
+      - traefik.http.routers.klaytnlb.tls.certresolver=letsencrypt
+      - traefik.http.services.klaytn.loadbalancer.server.port=8551
+      - traefik.http.routers.klaytnws.entrypoints=websecure
+      - traefik.http.routers.klaytnws.rule=Host(`${KLAYTNWS_HOST}.${DOMAIN}`)
+      - traefik.http.routers.klaytnws.service=klaytnws
+      - traefik.http.routers.klaytnws.tls.certresolver=letsencrypt
+      - traefik.http.routers.klaytnwslb.entrypoints=websecure
+      - traefik.http.routers.klaytnwslb.rule=Host(`${KLAYTNWS_LB}.${DOMAIN}`)
+      - traefik.http.routers.klaytnwslb.service=klaytnws
+      - traefik.http.routers.klaytnwslb.tls.certresolver=letsencrypt
+      - traefik.http.services.klaytnws.loadbalancer.server.port=8552
+
+volumes:
+  klaytn-data:
