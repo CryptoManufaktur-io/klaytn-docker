@@ -14,8 +14,9 @@ services:
       - klaytn-data:/var/lib/klaytn
       - /etc/localtime:/etc/localtime:ro
     ports:
-      - 32323:32323/tcp
       - 32323:32323/udp
+      - 32323:32323/tcp
+      - 32324:32324/tcp
     entrypoint:
       - bash
       - -c
